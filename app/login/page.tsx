@@ -23,31 +23,64 @@ export default function LoginPage() {
     role: "",
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault()
+  //   setError("")
+  //   setIsLoading(true)
+
+  //   await new Promise((resolve) => setTimeout(resolve, 1000))
+
+  //   // Test credentials: test@gmail.com / 1234
+  //   if (formData.email === "test@gmail.com" && formData.password === "1234" && formData.role) {
+  //     // Store user info in localStorage for demo purposes
+  //     localStorage.setItem(
+  //       "user",
+  //       JSON.stringify({
+  //         email: formData.email,
+  //         role: formData.role,
+  //         name: formData.role === "student" ? "John Doe" : formData.role === "advisor" ? "Dr. Smith" : "Admin User",
+  //       }),
+  //     )
+
+  //     // Redirect to dashboard
+  //     router.push("/dashboard")
+  //   } else {
+  //     setError("Invalid credentials. Use test@gmail.com / 1234 with any role.")
+  //   }
+
+  //   setIsLoading(false)
+  // }
+
+  const handleSubmit2 = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
 
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    // Test credentials: test@gmail.com / 1234
-    if (formData.email === "test@gmail.com" && formData.password === "1234" && formData.role) {
-      // Store user info in localStorage for demo purposes
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: formData.email,
-          role: formData.role,
-          name: formData.role === "student" ? "John Doe" : formData.role === "advisor" ? "Dr. Smith" : "Admin User",
-        }),
-      )
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
 
-      // Redirect to dashboard
-      router.push("/dashboard")
-    } else {
-      setError("Invalid credentials. Use test@gmail.com / 1234 with any role.")
+      const data = await response.json()
+
+      if (data.success) {
+        // Store user info in localStorage
+        // localStorage.setItem("user", JSON.stringify(data.user))
+        
+        // Redirect to dashboard
+        router.push("/dashboard")
+      } else {
+        setError(data.message || "Login failed")
+      }
+    } catch (error) {
+      setError("An error occurred. Please try again.")
     }
-
     setIsLoading(false)
   }
 
@@ -79,7 +112,7 @@ export default function LoginPage() {
               <CardDescription>Enter your credentials to access your account</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit2} className="space-y-4">
                 <AnimatePresence>
                   {error && (
                     <motion.div
@@ -109,7 +142,8 @@ export default function LoginPage() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="test@gmail.com"
+                      // placeholder="test@gmail.com"
+                      placeholder="Enter your email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"

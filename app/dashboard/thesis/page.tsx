@@ -18,6 +18,10 @@ const mockUser = {
   department: "Computer Science",
 }
 
+export async function GET() {
+  return Response.json({ message: "TEST TEST OMG"})
+}
+
 // Mock thesis data
 const mockThesis = {
   id: "thesis-001",

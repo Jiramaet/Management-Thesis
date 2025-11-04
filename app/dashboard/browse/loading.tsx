@@ -1,3 +1,9 @@
+import { NextResponse } from "next/server";
+
 export default function Loading() {
-  return null
+  return (
+    <div>
+      Loading...
+    </div>
+  )
 }

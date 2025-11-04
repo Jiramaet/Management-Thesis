@@ -1,24 +1,36 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react"
+import type React from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -27,42 +39,72 @@ export default function RegisterPage() {
     confirmPassword: "",
     role: "",
     department: "",
-    studentId: "",
+    user_id: "",
     bio: "",
-  })
+  });
+
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault()
+  //   setError("")
+  //   setIsLoading(true)
+
+  //   await new Promise((resolve) => setTimeout(resolve, 1000))
+
+  //   if (formData.email === "test@gmail.com" && formData.password === "1234" && formData.role) {
+  //     if (formData.password !== formData.confirmPassword) {
+  //       setError("Passwords do not match")
+  //       setIsLoading(false)
+  //       return
+  //     }
+
+  //     // Store user info in localStorage for demo purposes
+  //     localStorage.setItem(
+  //       "user",
+  //       JSON.stringify({
+  //         email: formData.email,
+  //         role: formData.role,
+  //         name: `${formData.firstName} ${formData.lastName}`,
+  //       }),
+  //     )
+
+  //     // Redirect to dashboard
+  //     router.push("/dashboard")
+  //   } else {
+  //     setError("Please use test@gmail.com / 1234 for demo registration")
+  //   }
+
+  //   setIsLoading(false)
+  // }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
     await new Promise((resolve) => setTimeout(resolve, 1000))
+    
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData)
+      })
+      
+      console.log(formData);
+      const data = await res.json()
 
-    if (formData.email === "test@gmail.com" && formData.password === "1234" && formData.role) {
-      if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match")
-        setIsLoading(false)
-        return
+      if (data.success) {
+        router.push("/login")
+      } else {
+        setError(data.message || "Register failed")
       }
-
-      // Store user info in localStorage for demo purposes
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: formData.email,
-          role: formData.role,
-          name: `${formData.firstName} ${formData.lastName}`,
-        }),
-      )
-
-      // Redirect to dashboard
-      router.push("/dashboard")
-    } else {
-      setError("Please use test@gmail.com / 1234 for demo registration")
+    } catch (error) {
+      setError("Error " + error);
     }
-
     setIsLoading(false)
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4">
@@ -76,10 +118,16 @@ export default function RegisterPage() {
         >
           <Link href="/" className="inline-flex items-center gap-2 mb-4">
             <BookOpen className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-heading font-bold">Thesis Management</span>
+            <span className="text-2xl font-heading font-bold">
+              Thesis Management
+            </span>
           </Link>
-          <h1 className="text-3xl font-heading font-bold text-foreground mb-2">Create Account</h1>
-          <p className="text-muted-foreground">Join our academic community today</p>
+          <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
+            Create Account
+          </h1>
+          <p className="text-muted-foreground">
+            Join our academic community today
+          </p>
         </motion.div>
 
         {/* Registration Form */}
@@ -91,7 +139,9 @@ export default function RegisterPage() {
           <Card className="rounded-2xl border-0 shadow-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="font-heading">Register</CardTitle>
-              <CardDescription>Fill in your information to create your account</CardDescription>
+              <CardDescription>
+                Fill in your information to create your account
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -120,14 +170,21 @@ export default function RegisterPage() {
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
                     <motion.div
-                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
+                      whileFocus={{
+                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+                      }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
                         id="firstName"
                         placeholder="John"
                         value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            firstName: e.target.value,
+                          })
+                        }
                         className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                         required
                       />
@@ -136,14 +193,18 @@ export default function RegisterPage() {
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
                     <motion.div
-                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
+                      whileFocus={{
+                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+                      }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
                         id="lastName"
                         placeholder="Doe"
                         value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, lastName: e.target.value })
+                        }
                         className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                         required
                       />
@@ -154,7 +215,9 @@ export default function RegisterPage() {
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <motion.div
-                    whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
+                    whileFocus={{
+                      boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+                    }}
                     transition={{ duration: 0.2 }}
                   >
                     <Input
@@ -162,7 +225,9 @@ export default function RegisterPage() {
                       type="email"
                       placeholder="test@gmail.com"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                       className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                       required
                     />
@@ -175,7 +240,9 @@ export default function RegisterPage() {
                     <Label htmlFor="password">Password</Label>
                     <motion.div
                       className="relative"
-                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
+                      whileFocus={{
+                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+                      }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
@@ -183,7 +250,9 @@ export default function RegisterPage() {
                         type={showPassword ? "text" : "password"}
                         placeholder="1234"
                         value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
                         className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                         required
                       />
@@ -206,7 +275,9 @@ export default function RegisterPage() {
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
                     <motion.div
                       className="relative"
-                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
+                      whileFocus={{
+                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+                      }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
@@ -214,7 +285,12 @@ export default function RegisterPage() {
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="1234"
                         value={formData.confirmPassword}
-                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                          })
+                        }
                         className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                         required
                       />
@@ -223,7 +299,9 @@ export default function RegisterPage() {
                         variant="ghost"
                         size="sm"
                         className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                       >
                         {showConfirmPassword ? (
                           <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -246,7 +324,9 @@ export default function RegisterPage() {
                     >
                       <Select
                         value={formData.role}
-                        onValueChange={(value) => setFormData({ ...formData, role: value })}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, role: value })
+                        }
                       >
                         <SelectTrigger className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200">
                           <SelectValue placeholder="Select your role" />
@@ -262,14 +342,21 @@ export default function RegisterPage() {
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
                     <motion.div
-                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
+                      whileFocus={{
+                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+                      }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
                         id="department"
                         placeholder="Computer Science"
                         value={formData.department}
-                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            department: e.target.value,
+                          })
+                        }
                         className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                         required
                       />
@@ -287,14 +374,21 @@ export default function RegisterPage() {
                   >
                     <Label htmlFor="studentId">Student ID</Label>
                     <motion.div
-                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
+                      whileFocus={{
+                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+                      }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
-                        id="studentId"
+                        id="user_id"
                         placeholder="20240001"
-                        value={formData.studentId}
-                        onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
+                        value={formData.user_id}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            user_id: e.target.value,
+                          })
+                        }
                         className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                         required
                       />
@@ -305,14 +399,18 @@ export default function RegisterPage() {
                 <div className="space-y-2">
                   <Label htmlFor="bio">Bio (Optional)</Label>
                   <motion.div
-                    whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
+                    whileFocus={{
+                      boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
+                    }}
                     transition={{ duration: 0.2 }}
                   >
                     <Textarea
                       id="bio"
                       placeholder="Tell us about yourself and your academic interests..."
                       value={formData.bio}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, bio: e.target.value })
+                      }
                       className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                       rows={3}
                     />
@@ -320,7 +418,10 @@ export default function RegisterPage() {
                 </div>
 
                 <motion.div
-                  whileHover={{ y: -1, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                  whileHover={{
+                    y: -1,
+                    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+                  }}
                   whileTap={{ y: 0 }}
                   transition={{ duration: 0.2 }}
                 >
@@ -348,11 +449,19 @@ export default function RegisterPage() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5, duration: 0.5 }}
                 >
-                  <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-2">🔑 Demo Registration:</p>
+                  <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-2">
+                    🔑 Demo Registration:
+                  </p>
                   <div className="space-y-1">
-                    <p className="text-sm text-blue-700 dark:text-blue-400">📧 Email: test@gmail.com</p>
-                    <p className="text-sm text-blue-700 dark:text-blue-400">🔒 Password: 1234</p>
-                    <p className="text-sm text-blue-700 dark:text-blue-400">👤 Role: Any role</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-400">
+                      📧 Email: test@gmail.com
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-400">
+                      🔒 Password: 1234
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-400">
+                      👤 Role: Any role
+                    </p>
                   </div>
                 </motion.div>
                 <p className="text-sm text-muted-foreground">
@@ -370,5 +479,5 @@ export default function RegisterPage() {
         </motion.div>
       </div>
     </div>
-  )
+  );
 }
