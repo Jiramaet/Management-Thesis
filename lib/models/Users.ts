@@ -20,24 +20,25 @@
 import mongoose, { Schema, model, Document } from 'mongoose';
 
 interface IUser extends Document {
+  // user_id is optional; we'll rely on MongoDB _id by default unless
+  // you specifically need a numeric user_id.
   user_id?: number;
+  name: string;
   email: string;
   password: string;
-  role: string;
-  department: string;
-  firstName: string;
-  lastName: string;
-  bio: string;
+  role?: string;
+  department?: string;
+  bio?: string;
 }
 
 const userSchema = new Schema<IUser>({
-  user_id: { type: Number, required: true, unique: true },
+  // Keep user_id if you need it, but it's optional here.
+  user_id: { type: Number, required: false, unique: true, sparse: true },
+  name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, required: true },
-  department: { type: String, required: true },
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
+  role: { type: String, required: false, default: 'student' },
+  department: { type: String, required: false, default: 'N/A' },
   bio: { type: String },
 });
 
