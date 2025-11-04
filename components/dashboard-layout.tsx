@@ -38,7 +38,7 @@ import {
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  user: {
+  user?: {
     id: string
     name: string
     email: string
@@ -50,8 +50,22 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+  // Defensive display values to avoid runtime errors when `user` is
+  // not immediately available (client hydration / async load).
+  const displayName = user?.name ?? "Guest"
+  const initials = (
+    (user?.name ?? "")
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("") || "U"
+  )
+
   const getNavigationItems = () => {
     const baseItems = [{ icon: Home, label: "Dashboard", href: "/dashboard" }]
+    // If user is not available yet, return base items only to avoid
+    // accessing user.role when user is undefined.
+    if (!user) return baseItems
 
     const roleSpecificItems = {
       student: [
@@ -132,9 +146,9 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
       >
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="capitalize">
-            {user.role}
+            {user?.role ?? "guest"}
           </Badge>
-          <span className="text-xs text-sidebar-foreground/70">{user.department}</span>
+          <span className="text-xs text-sidebar-foreground/70">{user?.department ?? ""}</span>
         </div>
       </motion.div>
     </motion.div>
@@ -173,7 +187,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
               </SheetTrigger>
             </Sheet>
 
-            <h2 className="font-heading font-semibold text-card-foreground">Welcome back, {user.name.split(" ")[0]}</h2>
+            <h2 className="font-heading font-semibold text-card-foreground">Welcome back, {displayName.split(" ")[0]}</h2>
           </div>
 
           <div className="flex items-center gap-4">
@@ -187,21 +201,16 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt={user.name} />
-                    <AvatarFallback>
-                      {user.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
+                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt={displayName} />
+                    <AvatarFallback>{initials}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    <p className="text-sm font-medium leading-none">{displayName}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user?.email ?? ""}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
