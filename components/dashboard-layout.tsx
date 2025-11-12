@@ -18,13 +18,14 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { GlobalSearch } from "@/components/global-search"
 import { NotificationBell } from "@/components/notification-bell"
+import { useTheme } from "next-themes"
 import {
   BookOpen,
   Home,
   FileText,
   Upload,
   Search,
-  Users,
+  User,
   Settings,
   Bell,
   BarChart3,
@@ -34,13 +35,17 @@ import {
   Clock,
   CheckCircle,
   MessageSquare,
+  Moon,
+  Sun,
 } from "lucide-react"
+
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  user: {
+  user?: { // (โค้ดส่วนนี้ของคุณดีมากครับ)
     id: string
-    name: string
+    firstname: string
+    lastname: string
     email: string
     role: "student" | "advisor" | "admin"
     department: string
@@ -49,9 +54,35 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, user }: DashboardLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { theme, setTheme } = useTheme() // <--- 3. เรียกใช้ useTheme
+
+  // --- 1. เพิ่มฟังก์ชันนี้กลับเข้ามา ---
+  const handleLogout = () => {
+    console.log("dashboard handleLogout called")
+    try {
+      localStorage.removeItem("user")
+    } catch (e) {
+      // ignore
+    }
+    // ใช้ window.location.href เพื่อบังคับโหลดหน้าใหม่
+    window.location.href = '/login'
+  }
+  // ---------------------------------
+
+  // Defensive display values (โค้ดส่วนนี้ของคุณดีมากครับ)
+  const displayName = user?.firstname + " " + user?.lastname || "Guest"
+  console.log("DashboardLayout user:", displayName)
+  const initials = (
+    (user?.firstname + " " + user?.lastname)
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("") || "U"
+  )
 
   const getNavigationItems = () => {
     const baseItems = [{ icon: Home, label: "Dashboard", href: "/dashboard" }]
+    if (!user) return baseItems
 
     const roleSpecificItems = {
       student: [
@@ -62,7 +93,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
         { icon: Bell, label: "Notifications", href: "/dashboard/notifications" },
       ],
       advisor: [
-        { icon: Users, label: "Students", href: "/dashboard/students" },
+        { icon: User, label: "Students", href: "/dashboard/students" },
         { icon: FileText, label: "Reviews", href: "/dashboard/reviews" },
         { icon: CheckCircle, label: "Approvals", href: "/dashboard/approvals" },
         { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
@@ -70,7 +101,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
         { icon: Bell, label: "Notifications", href: "/dashboard/notifications" },
       ],
       admin: [
-        { icon: Users, label: "User Management", href: "/dashboard/users" },
+        { icon: User, label: "User Management", href: "/dashboard/users" },
         { icon: FileText, label: "All Theses", href: "/dashboard/theses" },
         { icon: CheckCircle, label: "Approvals", href: "/dashboard/approvals" },
         { icon: BarChart3, label: "Analytics", href: "/dashboard/analytics" },
@@ -132,9 +163,9 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
       >
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="capitalize">
-            {user.role}
+            {user?.role ?? "guest"}
           </Badge>
-          <span className="text-xs text-sidebar-foreground/70">{user.department}</span>
+          <span className="text-xs text-sidebar-foreground/70">{user?.department ?? ""}</span>
         </div>
       </motion.div>
     </motion.div>
@@ -173,11 +204,22 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
               </SheetTrigger>
             </Sheet>
 
-            <h2 className="font-heading font-semibold text-card-foreground">Welcome back, {user.name.split(" ")[0]}</h2>
+            <h2 className="font-heading font-semibold text-card-foreground">Welcome back, {displayName}</h2>
           </div>
 
           <div className="flex items-center gap-4">
             <GlobalSearch />
+
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="hidden md:flex"
+            >
+              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            </Button>
 
             {/* Notifications */}
             <NotificationBell />
@@ -187,33 +229,53 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt={user.name} />
-                    <AvatarFallback>
-                      {user.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
+                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt={displayName} />
+                    <AvatarFallback>{initials}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.name}</p>
-                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                    <p className="text-sm font-medium leading-none">{displayName}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user?.email ?? ""}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+
+                {/* --- ปุ่มเพิ่มเติม --- */}
                 <DropdownMenuItem>
                   <Shield className="mr-2 h-4 w-4" />
                   <span>Admin Panel</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+
+                {/* {Button Profile} */}
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link href="/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+
+                {/* {Button Settings} */}
+                <DropdownMenuItem asChild className="cursor-pointer">
+                  <Link href="/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                
+                {/* --- 2. เพิ่ม onSelect และ className ที่นี่ --- */}
+                <DropdownMenuItem 
+                  onSelect={handleLogout} 
+                  className="cursor-pointer"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
+                {/* ------------------------------------------ */}
+                
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

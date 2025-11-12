@@ -11,7 +11,9 @@ import { Progress } from "@/components/ui/progress"
 import { FileText, Clock, CheckCircle, AlertCircle, TrendingUp, Download, Users, BookOpen } from "lucide-react"
 
 interface User {
-  name: string
+  id: string
+  firstname: string
+  lastname: string
   email: string
   role: string
 }
@@ -55,7 +57,7 @@ export default function DashboardPage() {
   const renderStudentDashboard = () => (
     <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
       <motion.div variants={itemVariants}>
-        <h1 className="text-3xl font-heading font-bold text-foreground mb-2">Welcome back, {user.name}</h1>
+        <h1 className="text-3xl font-heading font-bold text-foreground mb-2">Welcome back, {user.firstname}</h1>
         <p className="text-muted-foreground">Track your thesis progress and manage submissions</p>
       </motion.div>
 
@@ -431,7 +433,8 @@ export default function DashboardPage() {
 
   const dashboardUser = {
     id: "1",
-    name: user.name,
+    firstname: user.firstname,
+    lastname: user.lastname,
     email: user.email,
     role: user.role as "student" | "advisor" | "admin",
     department: "Computer Science",

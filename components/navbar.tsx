@@ -34,7 +34,8 @@ import {
 } from "lucide-react"
 
 interface AppUser {
-  name: string
+  firstname: string
+  lastname: string
   email: string
   role: string
 }
@@ -57,6 +58,7 @@ export default function Navbar() {
     localStorage.removeItem("user")
     setUser(null)
     router.push("/login")
+    // window.location.href = '/login'
   }
 
   const getNavItems = () => {
@@ -167,14 +169,14 @@ export default function Navbar() {
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="bg-primary text-primary-foreground">
-                          {user.name.charAt(0).toUpperCase()}
+                          {user.firstname.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <div className="flex flex-col space-y-1 p-2">
-                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-sm font-medium leading-none">{user.firstname} {user.lastname}</p>
                       <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                       <p className="text-xs leading-none text-muted-foreground capitalize">{user.role}</p>
                     </div>
