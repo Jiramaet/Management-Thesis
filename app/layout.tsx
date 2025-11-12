@@ -1,42 +1,38 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Montserrat } from "next/font/google"
-import { Open_Sans } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
+import type { Metadata } from "next";
+import { Montserrat, Open_Sans } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-montserrat",
-  weight: ["400", "600", "700", "900"],
-})
+});
 
 const openSans = Open_Sans({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-open-sans",
-  weight: ["400", "500", "600"],
-})
+});
 
 export const metadata: Metadata = {
   title: "Thesis Management System",
-  description: "Academic thesis management platform for students, advisors, and administrators",
-  generator: "v0.app",
-}
+  description: "Manage and submit your thesis",
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${openSans.variable}`}>
+    // --- 1. เพิ่ม suppressHydrationWarning ที่นี่ ---
+    <html lang="en" className={`${montserrat.variable} ${openSans.variable}`} suppressHydrationWarning={true}>
       <body className="font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }

@@ -81,6 +81,25 @@ export default function RegisterPage() {
     setError("");
     setIsLoading(true);
 
+    if (!formData.role) {
+      setError("Please select your role.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.role === "student" && !formData.user_id) {
+      setError("Please enter your Student ID.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Password and confirm password do not match.");
+      setIsLoading(false);
+      return;
+    }
+    // --------------------------------------------------
+
     await new Promise((resolve) => setTimeout(resolve, 1000))
     
     try {
