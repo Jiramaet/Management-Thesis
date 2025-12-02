@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react";
+// เพิ่มไอคอน Lock
+import { BookOpen, Eye, EyeOff, Loader2, AlertCircle, Lock } from "lucide-react"; 
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,6 +32,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -39,42 +41,11 @@ export default function RegisterPage() {
     confirmPassword: "",
     role: "",
     department: "",
-    user_id: "",
+    user_id: "", 
     bio: "",
+    advisorCode: "", // (เพิ่ม field นี้)
   });
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault()
-  //   setError("")
-  //   setIsLoading(true)
-
-  //   await new Promise((resolve) => setTimeout(resolve, 1000))
-
-  //   if (formData.email === "test@gmail.com" && formData.password === "1234" && formData.role) {
-  //     if (formData.password !== formData.confirmPassword) {
-  //       setError("Passwords do not match")
-  //       setIsLoading(false)
-  //       return
-  //     }
-
-  //     // Store user info in localStorage for demo purposes
-  //     localStorage.setItem(
-  //       "user",
-  //       JSON.stringify({
-  //         email: formData.email,
-  //         role: formData.role,
-  //         name: `${formData.firstName} ${formData.lastName}`,
-  //       }),
-  //     )
-
-  //     // Redirect to dashboard
-  //     router.push("/dashboard")
-  //   } else {
-  //     setError("Please use test@gmail.com / 1234 for demo registration")
-  //   }
-
-  //   setIsLoading(false)
-  // }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,13 +64,20 @@ export default function RegisterPage() {
       return;
     }
 
+    // (เพิ่ม Validation ฝั่งหน้าบ้าน)
+    if (formData.role === "advisor" && !formData.advisorCode) {
+      setError("Advisor Secret Code is required.");
+      setIsLoading(false);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError("Password and confirm password do not match.");
       setIsLoading(false);
       return;
     }
-    // --------------------------------------------------
-
+    
+    // (หน่วงเวลาเพื่อให้ดูเหมือนทำงาน)
     await new Promise((resolve) => setTimeout(resolve, 1000))
     
     try {
@@ -111,16 +89,15 @@ export default function RegisterPage() {
         body: JSON.stringify(formData)
       })
       
-      console.log(formData);
       const data = await res.json()
 
       if (data.success) {
-        router.push("/login")
+        router.push("/login") 
       } else {
-        setError(data.message || "Register failed")
+        setError(data.message || "Register failed"); 
       }
-    } catch (error) {
-      setError("Error " + error);
+    } catch (error: any) {
+      setError("Error: " + error.message);
     }
     setIsLoading(false)
   };
@@ -177,8 +154,9 @@ export default function RegisterPage() {
                         x: { duration: 0.5, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
                         opacity: { duration: 0.3 },
                       }}
-                      className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md"
+                      className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md flex items-center gap-2"
                     >
+                      <AlertCircle className="h-4 w-4" /> 
                       {error}
                     </motion.div>
                   )}
@@ -189,9 +167,7 @@ export default function RegisterPage() {
                   <div className="space-y-2">
                     <Label htmlFor="firstName">First Name</Label>
                     <motion.div
-                      whileFocus={{
-                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
-                      }}
+                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
@@ -212,9 +188,7 @@ export default function RegisterPage() {
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
                     <motion.div
-                      whileFocus={{
-                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
-                      }}
+                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
@@ -234,9 +208,7 @@ export default function RegisterPage() {
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <motion.div
-                    whileFocus={{
-                      boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
-                    }}
+                    whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
                     transition={{ duration: 0.2 }}
                   >
                     <Input
@@ -259,15 +231,13 @@ export default function RegisterPage() {
                     <Label htmlFor="password">Password</Label>
                     <motion.div
                       className="relative"
-                      whileFocus={{
-                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
-                      }}
+                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="1234"
+                        placeholder="Enter password"
                         value={formData.password}
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
@@ -294,15 +264,13 @@ export default function RegisterPage() {
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
                     <motion.div
                       className="relative"
-                      whileFocus={{
-                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
-                      }}
+                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
                         id="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
-                        placeholder="1234"
+                        placeholder="Confirm password"
                         value={formData.confirmPassword}
                         onChange={(e) =>
                           setFormData({
@@ -335,7 +303,7 @@ export default function RegisterPage() {
                 {/* Role and Academic Info */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
+                    <Label htmlFor="role">Role *</Label>
                     <motion.div
                       whileHover={{ opacity: 0.9 }}
                       whileTap={{ opacity: 0.8 }}
@@ -353,6 +321,7 @@ export default function RegisterPage() {
                         <SelectContent>
                           <SelectItem value="student">Student</SelectItem>
                           <SelectItem value="advisor">Advisor</SelectItem>
+                          {/* Admin ก็อาจจะใช้รหัสเดียวกับ Advisor หรือคนละรหัสก็ได้ */}
                           <SelectItem value="admin">Administrator</SelectItem>
                         </SelectContent>
                       </Select>
@@ -361,9 +330,7 @@ export default function RegisterPage() {
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
                     <motion.div
-                      whileFocus={{
-                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
-                      }}
+                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
@@ -383,6 +350,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
+                {/* --- ส่วน Student ID (โชว์เมื่อเป็น Student) --- */}
                 {formData.role === "student" && (
                   <motion.div
                     className="space-y-2"
@@ -391,11 +359,9 @@ export default function RegisterPage() {
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <Label htmlFor="studentId">Student ID</Label>
+                    <Label htmlFor="user_id">Student ID *</Label>
                     <motion.div
-                      whileFocus={{
-                        boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
-                      }}
+                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
                       transition={{ duration: 0.2 }}
                     >
                       <Input
@@ -415,12 +381,51 @@ export default function RegisterPage() {
                   </motion.div>
                 )}
 
+                {/* --- ส่วน Advisor Secret Code (โชว์เมื่อเป็น Advisor หรือ Admin) --- */}
+                {(formData.role === "advisor" || formData.role === "admin") && (
+                  <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Label htmlFor="advisorCode" className="text-blue-600 dark:text-blue-400 font-semibold">
+                      Secret Access Code *
+                    </Label>
+                    <motion.div
+                      className="relative"
+                      whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="advisorCode"
+                        type="password"
+                        placeholder="Enter secret code to register as staff"
+                        value={formData.advisorCode}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            advisorCode: e.target.value,
+                          })
+                        }
+                        className="pl-10 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 border-blue-200 dark:border-blue-800"
+                        required
+                      />
+                    </motion.div>
+                    <p className="text-xs text-muted-foreground">
+                       Only authorized faculty members can register with this role.
+                    </p>
+                  </motion.div>
+                )}
+                {/* ----------------------------------------------------------- */}
+
+
                 <div className="space-y-2">
                   <Label htmlFor="bio">Bio (Optional)</Label>
                   <motion.div
-                    whileFocus={{
-                      boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)",
-                    }}
+                    whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
                     transition={{ duration: 0.2 }}
                   >
                     <Textarea
@@ -462,27 +467,6 @@ export default function RegisterPage() {
               </form>
 
               <div className="mt-6 text-center">
-                <motion.div
-                  className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border border-blue-200 dark:border-blue-800 rounded-lg shadow-sm"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5, duration: 0.5 }}
-                >
-                  <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-2">
-                    🔑 Demo Registration:
-                  </p>
-                  <div className="space-y-1">
-                    <p className="text-sm text-blue-700 dark:text-blue-400">
-                      📧 Email: test@gmail.com
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-400">
-                      🔒 Password: 1234
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-400">
-                      👤 Role: Any role
-                    </p>
-                  </div>
-                </motion.div>
                 <p className="text-sm text-muted-foreground">
                   Already have an account?{" "}
                   <Link

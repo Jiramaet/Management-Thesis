@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -11,67 +12,79 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Bell, CheckCircle, Clock, MessageSquare, Calendar } from "lucide-react"
+import { Bell, CheckCircle, Clock, MessageSquare, Info } from "lucide-react"
 
-// Mock notifications for the dropdown
-const recentNotifications = [
-  {
-    id: "1",
-    type: "thesis_approved",
-    title: "Thesis Approved",
-    message: "Your thesis has been approved by Dr. Jane Smith.",
-    timestamp: "2024-01-25T10:30:00Z",
-    read: false,
-  },
-  {
-    id: "2",
-    type: "deadline_reminder",
-    title: "Deadline Reminder",
-    message: "Submission deadline in 3 days.",
-    timestamp: "2024-01-24T09:00:00Z",
-    read: false,
-  },
-  {
-    id: "3",
-    type: "feedback_received",
-    title: "New Feedback",
-    message: "Dr. Jane Smith provided feedback on chapter 3.",
-    timestamp: "2024-01-23T14:15:00Z",
-    read: true,
-  },
-]
+interface INotification {
+  _id: string;
+  title: string;
+  message: string;
+  link: string;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+}
 
 export function NotificationBell() {
-  const [notifications, setNotifications] = useState(recentNotifications)
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const [notifications, setNotifications] = useState<INotification[]>([])
+  const router = useRouter()
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case "thesis_approved":
-        return <CheckCircle className="h-4 w-4 text-secondary" />
-      case "deadline_reminder":
-        return <Clock className="h-4 w-4 text-yellow-500" />
-      case "feedback_received":
-        return <MessageSquare className="h-4 w-4 text-primary" />
-      case "meeting_scheduled":
-        return <Calendar className="h-4 w-4 text-accent" />
-      default:
-        return <Bell className="h-4 w-4 text-muted-foreground" />
+  // 1. ดึงข้อมูลเมื่อโหลดหน้าเว็บ
+  useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const fetchNotis = async () => {
+        // Check if user is logged in
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+
+        try {
+            const res = await fetch('/api/notifications', { signal });
+            if (res.status === 401) {
+                localStorage.removeItem("user");
+                router.push('/login');
+                return;
+            }
+            
+            const data = await res.json();
+            if(data.success) setNotifications(data.notifications);
+        } catch (e: any) { 
+            if (e.name === 'AbortError') return;
+            // Suppress "Failed to fetch" which happens on dev server restart/network blip
+            if (e.message === 'Failed to fetch') return;
+            console.error("Notification fetch error:", e); 
+        }
+    };
+    fetchNotis();
+    
+    // (Optional) ตั้งเวลาดึงใหม่ทุก 30 วินาที (Polling)
+    const interval = setInterval(fetchNotis, 30000);
+    return () => {
+        clearInterval(interval);
+        controller.abort();
+    };
+  }, [])
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length
+
+  const handleRead = async (n: INotification) => {
+    // 1. ถ้ายังไม่อ่าน ให้ยิง API ไปบอกว่าอ่านแล้ว
+    if (!n.isRead) {
+        await fetch('/api/notifications', {
+            method: 'PUT',
+            body: JSON.stringify({ id: n._id })
+        });
+        // อัปเดตหน้าจอทันที
+        setNotifications(prev => prev.map(item => item._id === n._id ? { ...item, isRead: true } : item));
     }
+    // 2. ไปยังลิงก์
+    if (n.link && n.link !== '#') router.push(n.link);
   }
 
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-
-    if (diffInHours < 1) return "Just now"
-    if (diffInHours < 24) return `${diffInHours}h ago`
-    return date.toLocaleDateString()
-  }
-
-  const markAsRead = (id: string) => {
-    setNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)))
+  const getIcon = (type: string) => {
+      if(type === 'success') return <CheckCircle className="h-4 w-4 text-green-500" />;
+      if(type === 'warning') return <Clock className="h-4 w-4 text-yellow-500" />;
+      return <Info className="h-4 w-4 text-blue-500" />;
   }
 
   return (
@@ -80,56 +93,36 @@ export function NotificationBell() {
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs">{unreadCount}</Badge>
+            <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs bg-red-500 hover:bg-red-600">{unreadCount}</Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="end" forceMount>
+      <DropdownMenuContent className="w-80" align="end">
         <DropdownMenuLabel className="font-normal">
           <div className="flex items-center justify-between">
             <span className="font-medium">Notifications</span>
-            {unreadCount > 0 && (
-              <Badge variant="outline" className="text-xs">
-                {unreadCount} new
-              </Badge>
-            )}
+            {unreadCount > 0 && <span className="text-xs text-muted-foreground">{unreadCount} unread</span>}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-
-        {notifications.length === 0 ? (
-          <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
-        ) : (
-          <>
-            {notifications.slice(0, 5).map((notification) => (
-              <DropdownMenuItem
-                key={notification.id}
-                className={`p-3 cursor-pointer ${!notification.read ? "bg-primary/5" : ""}`}
-                onClick={() => !notification.read && markAsRead(notification.id)}
-              >
-                <div className="flex items-start gap-3 w-full">
-                  <div className="flex-shrink-0 mt-0.5">{getNotificationIcon(notification.type)}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium leading-none">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
-                        <p className="text-xs text-muted-foreground">{formatTimestamp(notification.timestamp)}</p>
-                      </div>
-                      {!notification.read && <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1" />}
+        
+        <div className="max-h-[300px] overflow-y-auto">
+            {notifications.length === 0 ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
+            ) : (
+            notifications.map((n) => (
+                <DropdownMenuItem key={n._id} className={`p-3 cursor-pointer flex items-start gap-3 ${!n.isRead ? "bg-muted/50" : ""}`} onClick={() => handleRead(n)}>
+                    <div className="mt-1">{getIcon(n.type)}</div>
+                    <div className="flex-1 space-y-1">
+                        <p className={`text-sm leading-none ${!n.isRead ? "font-semibold" : ""}`}>{n.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>
+                        <p className="text-[10px] text-muted-foreground">{new Date(n.createdAt).toLocaleDateString()}</p>
                     </div>
-                  </div>
-                </div>
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-center">
-              <Button variant="ghost" size="sm" className="w-full">
-                View All Notifications
-              </Button>
-            </DropdownMenuItem>
-          </>
-        )}
+                    {!n.isRead && <div className="w-2 h-2 bg-blue-500 rounded-full mt-1" />}
+                </DropdownMenuItem>
+            ))
+            )}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   )

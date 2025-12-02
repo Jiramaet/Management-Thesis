@@ -9,20 +9,27 @@ export async function POST(req: Request) {
     await connectDatabase();
     const body = await req.json();
 
+    if (body.role === 'advisor') {
+      const secret = process.env.ADVISOR_SECRET;
+      if (body.advisorCode !== secret) {
+        return NextResponse.json({ 
+          success: false, 
+          message: 'Invalid Advisor Secret Code. You are not authorized.' 
+        }, { status: 403 });
+      }
+    }
+
     const userIdToSave = body.role === 'student' ? body.user_id : body.email;
 
     if (!userIdToSave) {
       return NextResponse.json({ success: false, message: 'User ID or Email is required.' }, { status: 400 });
     }
-    // ----------------------------------------
-
-    // เช็ค Email ซ้ำ
+ 
     const checkEmail = await User.exists({ email: body.email });
     if (checkEmail) {
       return NextResponse.json({ success: false, message: 'Email already exists.' }, { status: 409 });
     }
 
-    // เช็ค User ID ซ้ำ
     const checkUserId = await User.exists({ user_id: userIdToSave });
     if (checkUserId) {
       return NextResponse.json({ success: false, message: 'User ID or Email already registered.' }, { status: 409 });
@@ -46,7 +53,6 @@ export async function POST(req: Request) {
       department: body.department,
       bio: body.bio 
     });
-    // ---------------------------------------
 
     return NextResponse.json({
       success: true,

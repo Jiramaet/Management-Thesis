@@ -23,35 +23,7 @@ export default function LoginPage() {
     role: "",
   })
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault()
-  //   setError("")
-  //   setIsLoading(true)
-
-  //   await new Promise((resolve) => setTimeout(resolve, 1000))
-
-  //   // Test credentials: test@gmail.com / 1234
-  //   if (formData.email === "test@gmail.com" && formData.password === "1234" && formData.role) {
-  //     // Store user info in localStorage for demo purposes
-  //     localStorage.setItem(
-  //       "user",
-  //       JSON.stringify({
-  //         email: formData.email,
-  //         role: formData.role,
-  //         name: formData.role === "student" ? "John Doe" : formData.role === "advisor" ? "Dr. Smith" : "Admin User",
-  //       }),
-  //     )
-
-  //     // Redirect to dashboard
-  //     router.push("/dashboard")
-  //   } else {
-  //     setError("Invalid credentials. Use test@gmail.com / 1234 with any role.")
-  //   }
-
-  //   setIsLoading(false)
-  // }
-
-  const handleSubmit2 = async (e: React.FormEvent) => {
+    const handleSubmit2 = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
@@ -70,10 +42,6 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (data.success) {
-        // Store user info in localStorage
-        localStorage.setItem("user", JSON.stringify(data.user))
-        
-        // Redirect to dashboard
         router.push("/dashboard")
       } else {
         setError(data.message || "Login failed")
@@ -230,11 +198,11 @@ export default function LoginPage() {
                   transition={{ delay: 0.5, duration: 0.5 }}
                 >
                   <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-2">🔑 Test Credentials:</p>
-                  <div className="space-y-1">
+                  {/* <div className="space-y-1">
                     <p className="text-sm text-blue-700 dark:text-blue-400">📧 Email: test@gmail.com</p>
                     <p className="text-sm text-blue-700 dark:text-blue-400">🔒 Password: 1234</p>
                     <p className="text-sm text-blue-700 dark:text-blue-400">👤 Role: Any role</p>
-                  </div>
+                  </div> */}
                 </motion.div>
                 <p className="text-sm text-muted-foreground">
                   Don't have an account?{" "}

@@ -34,10 +34,11 @@ import {
 } from "lucide-react"
 
 interface AppUser {
-  firstname: string
-  lastname: string
-  email: string
-  role: string
+  firstname?: string; // (ใส่ ? เพื่อบอกว่าอาจจะไม่มีก็ได้)
+  lastname?: string;
+  email: string;
+  role: string;
+  department?: string;
 }
 
 export default function Navbar() {
@@ -48,21 +49,57 @@ export default function Navbar() {
   const { theme, setTheme } = useTheme()
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    if (userData) {
-      setUser(JSON.parse(userData))
+    const loadUserFromStorage = () => {
+      const userData = localStorage.getItem("user") 
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData)
+          // (เพิ่มการเช็คว่ามีข้อมูลจริงๆ)
+          if (parsedUser) {
+            setUser(parsedUser)
+          } else {
+            setUser(null)
+          }
+        } catch (error) {
+          console.error("Failed to parse user data", error)
+          localStorage.removeItem("user") 
+          setUser(null)
+        }
+      } else {
+        setUser(null) 
+      }
     }
-  }, [])
+
+    loadUserFromStorage()
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === "user") {
+        loadUserFromStorage()
+      }
+    }
+    window.addEventListener("storage", handleStorageChange)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+    }
+  }, []) 
 
   const handleLogout = () => {
-    localStorage.removeItem("user")
-    setUser(null)
-    router.push("/login")
-    // window.location.href = '/login'
+    try {
+      // ลบ Cookie ผ่าน API
+      fetch('/api/auth/logout', { method: 'POST' });
+      localStorage.removeItem("user");
+    } catch (e) { /* ignore */ }
+    window.location.href = '/login'
   }
 
+  const displayName = user ? `${user.firstname || 'User'} ${user.lastname || ''}`.trim() : ""
+  
+  const initials = user?.firstname ? user.firstname.charAt(0).toUpperCase() : "U"
+
+
   const getNavItems = () => {
-    if (!user) return []
+    if (!user) return [] 
 
     const baseItems = [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -70,11 +107,10 @@ export default function Navbar() {
       { href: "/dashboard/browse", label: "Browse", icon: Search },
       { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
     ]
-
+    
     if (user.role === "student") {
       return [...baseItems, { href: "/dashboard/thesis", label: "My Thesis", icon: FileText }]
     }
-
     if (user.role === "advisor") {
       return [
         ...baseItems,
@@ -83,7 +119,6 @@ export default function Navbar() {
         { href: "/dashboard/reports", label: "Reports", icon: FileBarChart },
       ]
     }
-
     if (user.role === "admin") {
       return [
         ...baseItems,
@@ -92,7 +127,6 @@ export default function Navbar() {
         { href: "/dashboard/reports", label: "Reports", icon: FileBarChart },
       ]
     }
-
     return baseItems
   }
 
@@ -169,32 +203,33 @@ export default function Navbar() {
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="bg-primary text-primary-foreground">
-                          {user.firstname.charAt(0).toUpperCase()}
+                          {/* --- ใช้ตัวแปร initials ที่ปลอดภัยแล้ว --- */}
+                          {initials}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <div className="flex flex-col space-y-1 p-2">
-                      <p className="text-sm font-medium leading-none">{user.firstname} {user.lastname}</p>
+                      <p className="text-sm font-medium leading-none">{displayName}</p>
                       <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                       <p className="text-xs leading-none text-muted-foreground capitalize">{user.role}</p>
                     </div>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile" className="cursor-pointer">
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link href="/profile">
                         <User className="mr-2 h-4 w-4" />
                         Profile
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings" className="cursor-pointer">
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link href="/settings">
                         <Settings className="mr-2 h-4 w-4" />
                         Settings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <DropdownMenuItem onSelect={() => handleLogout()} className="cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       Log out
                     </DropdownMenuItem>

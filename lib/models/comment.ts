@@ -1,17 +1,21 @@
-import mongoose, { Schema, model, Document } from 'mongoose';
-
+// lib/models/comment.ts
+import mongoose, { Schema, model, Document, Types } from 'mongoose';
 interface IComment extends Document {
-  comment_id?: number;
-  user_id: number;
-  thesis_id: number;
-  content: string;
+  user: Types.ObjectId;   
+  thesis: Types.ObjectId; 
+  content: string;        
+  isRead: boolean;
+  createdAt: Date; 
+  updatedAt: Date;
 }
 
 const commentSchema = new Schema<IComment>({
-  comment_id: { type: Number, required: true },
-  user_id: { type: Number, required: true },
-  thesis_id: { type: Number, required: true },
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  thesis: { type: Schema.Types.ObjectId, ref: 'Thesis', required: true },
   content: { type: String, required: true },
+  isRead: { type: Boolean, default: false },
+}, { 
+  timestamps: true 
 });
 
-export const Comment = mongoose.models.Comment || mongoose.model('Comment', commentSchema)
+export const Comment = mongoose.models.Comment || mongoose.model<IComment>('Comment', commentSchema);

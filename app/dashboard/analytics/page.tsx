@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,59 +22,54 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
-import { TrendingUp, TrendingDown, Users, FileText, Download, BarChart3 } from "lucide-react"
+import { TrendingUp, TrendingDown, Users, FileText, Download, BarChart3, Loader2 } from "lucide-react"
 
-// Mock user data
+// Mock user data (keep for layout)
 const mockUser = {
   id: "1",
-  name: "John Doe",
+  firstname: "John",
+  lastname: "Doe",
   email: "john.doe@university.edu",
   role: "admin" as const,
   department: "Computer Science",
 }
 
-// Mock analytics data
-const uploadTrends = [
-  { month: "Jan", uploads: 45, downloads: 1200 },
-  { month: "Feb", uploads: 52, downloads: 1350 },
-  { month: "Mar", uploads: 48, downloads: 1180 },
-  { month: "Apr", uploads: 61, downloads: 1420 },
-  { month: "May", uploads: 55, downloads: 1380 },
-  { month: "Jun", uploads: 67, downloads: 1650 },
-]
-
-const categoryData = [
-  { name: "Computer Science", value: 35, color: "hsl(var(--chart-1))" },
-  { name: "Engineering", value: 25, color: "hsl(var(--chart-2))" },
-  { name: "Physics", value: 15, color: "hsl(var(--chart-3))" },
-  { name: "Mathematics", value: 12, color: "hsl(var(--chart-4))" },
-  { name: "Biology", value: 8, color: "hsl(var(--chart-5))" },
-  { name: "Other", value: 5, color: "hsl(var(--muted-foreground))" },
-]
-
-const statusData = [
-  { status: "Published", count: 156, color: "hsl(var(--chart-2))" },
-  { status: "In Review", count: 43, color: "hsl(var(--chart-1))" },
-  { status: "Draft", count: 28, color: "hsl(var(--chart-3))" },
-  { status: "Rejected", count: 12, color: "hsl(var(--destructive))" },
-]
-
-const topTheses = [
-  { title: "Machine Learning in Healthcare", author: "Alice Johnson", downloads: 1245, category: "Computer Science" },
-  { title: "Sustainable Energy Solutions", author: "Bob Smith", downloads: 987, category: "Engineering" },
-  { title: "Quantum Computing Algorithms", author: "Carol Davis", downloads: 856, category: "Physics" },
-  { title: "Neural Network Optimization", author: "David Brown", downloads: 743, category: "Computer Science" },
-  { title: "Blockchain Security Analysis", author: "Emma Wilson", downloads: 692, category: "Computer Science" },
-]
-
 export default function AnalyticsPage() {
   const [user] = useState(mockUser)
   const [timeRange, setTimeRange] = useState("6months")
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<any>(null)
 
-  const totalUploads = uploadTrends.reduce((sum, item) => sum + item.uploads, 0)
-  const totalDownloads = uploadTrends.reduce((sum, item) => sum + item.downloads, 0)
-  const avgUploadsPerMonth = Math.round(totalUploads / uploadTrends.length)
-  const avgDownloadsPerMonth = Math.round(totalDownloads / uploadTrends.length)
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/analytics');
+        const json = await res.json();
+        if (json.success) {
+          setData(json.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch analytics:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading) {
+      return (
+          <DashboardLayout user={user}>
+              <div className="flex items-center justify-center h-screen">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+          </DashboardLayout>
+      )
+  }
+
+  if (!data) return null;
+
+  const { totalTheses, activeUsers, totalDownloads, avgUploadsPerMonth, uploadTrends, categoryData, statusData, topTheses } = data;
 
   return (
     <DashboardLayout user={user}>
@@ -91,10 +86,7 @@ export default function AnalyticsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1month">Last Month</SelectItem>
-                  <SelectItem value="3months">Last 3 Months</SelectItem>
                   <SelectItem value="6months">Last 6 Months</SelectItem>
-                  <SelectItem value="1year">Last Year</SelectItem>
                 </SelectContent>
               </Select>
               <Button>
@@ -113,10 +105,10 @@ export default function AnalyticsPage() {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1,234</div>
+              <div className="text-2xl font-bold">{totalTheses}</div>
               <p className="text-xs text-muted-foreground flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1 text-secondary" />
-                +12% from last month
+                Total submissions
               </p>
             </CardContent>
           </Card>
@@ -127,10 +119,10 @@ export default function AnalyticsPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">456</div>
+              <div className="text-2xl font-bold">{activeUsers}</div>
               <p className="text-xs text-muted-foreground flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1 text-secondary" />
-                +8% from last month
+                Registered users
               </p>
             </CardContent>
           </Card>
@@ -144,7 +136,7 @@ export default function AnalyticsPage() {
               <div className="text-2xl font-bold">{totalDownloads.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1 text-secondary" />
-                +15% from last month
+                All time downloads
               </p>
             </CardContent>
           </Card>
@@ -157,8 +149,7 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="text-2xl font-bold">{avgUploadsPerMonth}</div>
               <p className="text-xs text-muted-foreground flex items-center">
-                <TrendingDown className="h-3 w-3 mr-1 text-destructive" />
-                -3% from last period
+                Based on last 6 months
               </p>
             </CardContent>
           </Card>
@@ -275,9 +266,9 @@ export default function AnalyticsPage() {
                           outerRadius={100}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }: { name: string, percent?: number }) => `${name} ${(percent ? percent * 100 : 0).toFixed(0)}%`}
                         >
-                          {categoryData.map((entry, index) => (
+                          {categoryData.map((entry: any, index: number) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
@@ -295,7 +286,7 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {categoryData.map((category, index) => (
+                    {categoryData.map((category: any, index: number) => (
                       <div key={index} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-4 h-4 rounded-full" style={{ backgroundColor: category.color }} />
@@ -332,11 +323,11 @@ export default function AnalyticsPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={statusData} layout="horizontal">
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey="status" type="category" width={80} />
+                        <XAxis type="category" dataKey="status" />
+                        <YAxis type="number" />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                          {statusData.map((entry, index) => (
+                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                          {statusData.map((entry: any, index: number) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Bar>
@@ -353,7 +344,7 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {statusData.map((status, index) => (
+                    {statusData.map((status: any, index: number) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-4 border border-border rounded-lg"
@@ -365,7 +356,7 @@ export default function AnalyticsPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-2xl font-bold">{status.count}</span>
                           <Badge variant="outline">
-                            {((status.count / statusData.reduce((sum, s) => sum + s.count, 0)) * 100).toFixed(1)}%
+                            {((status.count / statusData.reduce((sum: number, s: any) => sum + s.count, 0)) * 100).toFixed(1)}%
                           </Badge>
                         </div>
                       </div>
@@ -384,14 +375,14 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {topTheses.map((thesis, index) => (
+                  {topTheses.map((thesis: any, index: number) => (
                     <div key={index} className="flex items-center justify-between p-4 border border-border rounded-lg">
                       <div className="space-y-1">
                         <h4 className="font-medium text-foreground">{thesis.title}</h4>
                         <p className="text-sm text-muted-foreground">by {thesis.author}</p>
                       </div>
                       <div className="flex items-center gap-4">
-                        <Badge variant="outline">{thesis.category}</Badge>
+                        <Badge variant="outline">{thesis.category || 'Uncategorized'}</Badge>
                         <div className="text-right">
                           <div className="text-lg font-bold">{thesis.downloads.toLocaleString()}</div>
                           <div className="text-xs text-muted-foreground">downloads</div>

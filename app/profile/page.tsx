@@ -10,71 +10,70 @@ import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import Navbar from "@/components/navbar"
-import { User, Mail, Shield, Calendar, Edit, Save, X } from "lucide-react"
+import { User, Mail, Shield, Calendar, Edit, Save, X, Loader2 } from "lucide-react" 
 import { AnimatePresence} from "framer-motion"
 import { AlertCircle } from "lucide-react"
-import { set } from "mongoose"
-import { se, tr } from "date-fns/locale"
 
 interface UserProfile {
-  id?: string
-  firstname?: string
-  lastname?: string
-  email: string
-  role: string
-  joinDate?: string
-  department?: string
-  studentId?: string
-  user_id?: string
+  id: string;
+  firstname?: string;
+  lastname?: string;
+  email: string;
+  role: string;
+  joinDate?: string; 
+  department?: string;
+  studentId?: string; 
+  user_id?: string;  
+  bio?: string;
+  stats?: {
+    stat1: number;
+    stat2: number;
+    stat3: number;
+  };
 }
 
 export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [editForm, setEditForm] = useState<UserProfile>({
-    id: "",
-    firstname: "",
-    lastname: "",
-    email: "",
-    role: "",
-    department: "",
-    studentId: "",
-    user_id: "",
-  })
+  
+
+  const [editForm, setEditForm] = useState<Partial<UserProfile>>({}) 
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null); 
+  const [loadingUser, setLoadingUser] = useState(true); 
   const router = useRouter()
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    if (!userData) {
-      router.push("/login")
-      return
-    }
+    async function fetchUser() {
+      setLoadingUser(true);
+      try {
+        // Change to fetch from /api/profile to get stats
+        const res = await fetch('/api/profile'); 
+        if (!res.ok) throw new Error('Not authenticated');
 
-    const parsedUser = JSON.parse(userData)
-    // Add mock additional data
-    const fullUser = {
-      ...parsedUser,
-      joinDate: "January 2024",
-      department: parsedUser.department || "Not specified",
-      studentId: parsedUser.user_id,
-      user_id: parsedUser.user_id,
+        const data = await res.json();
+        if (data.success) {
+          const fullUser = {
+            ...data.user,
+            joinDate: "January 2024", 
+            studentId: data.user.user_id, 
+            bio: data.user.bio || "",
+            stats: data.stats // Add stats
+          }
+          setUser(fullUser);
+          setEditForm(fullUser); 
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (error) {
+        router.push("/login");
+      } finally {
+        setLoadingUser(false);
+      }
     }
-
-    setUser(fullUser)
-    setEditForm(fullUser)
+    fetchUser();
   }, [router])
-
-  // const handleSave = () => {
-  //   if (user) {
-  //     const updatedUser = { ...user, ...editForm }
-  //     setUser(updatedUser)
-  //     localStorage.setItem("user", JSON.stringify(updatedUser))
-  //     setIsEditing(false)
-  //   }
-  // }
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -82,25 +81,24 @@ export default function ProfilePage() {
 
     try {
       const res = await fetch('/api/profile', {
-        method: 'PUT',
+        method: 'PUT', 
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(editForm), 
       });
 
       const data = await res.json();
 
       if (data.success) {
-        // อัพเดท local storage จาก Server response
-        const updatedUser = { ...user, ...editForm };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-
-        updatedUser.studentId = data.user.user_id;
-
-        // อัพเดทสถานะ
-        setUser(updatedUser);
-        setEditForm(updatedUser);
+        const updatedFullUser = {
+          ...data.user,
+          joinDate: user?.joinDate || "January 2024", 
+          studentId: data.user.user_id, 
+        };
+        localStorage.setItem("user", JSON.stringify(data.user)); 
+        setUser(updatedFullUser);
+        setEditForm(updatedFullUser);
         setIsEditing(false);
         setError(null);
       } else {
@@ -121,7 +119,7 @@ export default function ProfilePage() {
     setError(null);
   }
 
-  if (!user) {
+  if (loadingUser || !user) { 
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -142,13 +140,11 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-heading font-bold text-foreground mb-2">Profile</h1>
           <p className="text-muted-foreground">Manage your account information and preferences</p>
         </div>
 
-        {/* --- 4. เพิ่มการแสดง Error (ถ้ามี) --- */}
         <AnimatePresence>
           {error && (
             <motion.div
@@ -162,7 +158,6 @@ export default function ProfilePage() {
             </motion.div>
           )}
         </AnimatePresence>
-        {/* ----------------------------------- */}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Card */}
@@ -175,10 +170,10 @@ export default function ProfilePage() {
               <CardContent className="p-6 text-center">
                 <Avatar className="h-24 w-24 mx-auto mb-4">
                   <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                    {user.firstname.charAt(0).toUpperCase()}
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
-                <h2 className="text-xl font-heading font-bold text-foreground mb-2">{user.firstname} {user.lastname}</h2>
+                <h2 className="text-xl font-heading font-bold text-foreground mb-2">{displayName}</h2>
                 <p className="text-muted-foreground mb-4">{user.email}</p>
                 <Badge className="mb-4 capitalize bg-gradient-to-r from-blue-600 to-green-600 text-white">
                   {user.role}
@@ -205,7 +200,6 @@ export default function ProfilePage() {
             </Card>
           </motion.div>
 
-          {/* Profile Information */}
           <motion.div
             className="lg:col-span-2"
             initial={{ opacity: 0, x: 20 }}
@@ -228,11 +222,11 @@ export default function ProfilePage() {
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button onClick={handleSave} size="sm">
-                      <Save className="h-4 w-4 mr-2" />
+                    <Button onClick={handleSave} size="sm" disabled={isLoading}>
+                      {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                       Save
                     </Button>
-                    <Button onClick={handleCancel} variant="outline" size="sm">
+                    <Button onClick={handleCancel} variant="outline" size="sm" disabled={isLoading}>
                       <X className="h-4 w-4 mr-2" />
                       Cancel
                     </Button>
@@ -240,29 +234,54 @@ export default function ProfilePage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-6">
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="firstname">First Name</Label>
                     {isEditing ? (
                       <motion.div
                         whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
                         transition={{ duration: 0.2 }}
                       >
                         <Input
-                          id="name"
-                          value={editForm.firstname + " " + editForm.lastname}
-                          onChange={(e) => setEditForm({ ...editForm, firstname: e.target.value.split(" ")[0], lastname: e.target.value.split(" ")[1] || "" })}
+                          id="firstname"
+                          value={editForm.firstname || ''}
+                          onChange={(e) => setEditForm({ ...editForm, firstname: e.target.value })}
                           className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
                         />
                       </motion.div>
                     ) : (
                       <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
                         <User className="h-4 w-4 text-muted-foreground" />
-                        <span>{user.firstname} {user.lastname}</span>
+                        <span>{user.firstname || '...'}</span>
                       </div>
                     )}
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="lastname">Last Name</Label>
+                    {isEditing ? (
+                      <motion.div
+                        whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Input
+                          id="lastname"
+                          value={editForm.lastname || ''}
+                          onChange={(e) => setEditForm({ ...editForm, lastname: e.target.value })}
+                          className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
+                        />
+                      </motion.div>
+                    ) : (
+                      <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span>{user.lastname || '...'}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
                     {isEditing ? (
@@ -316,50 +335,24 @@ export default function ProfilePage() {
                     )}
                   </div>
 
-                  {/* {user.role === "student" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="studentId">Student ID</Label>
-                      {isEditing ? (
-                        <motion.div
-                          whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Input
-                            id="studentId"
-                            value={editForm.studentId || ""}
-                            onChange={(e) => setEditForm({ ...editForm, studentId: e.target.value })}
-                            className="focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
-                          />
-                        </motion.div>
-                      ) : (
-                        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span>{user.studentId || "Not specified"}</span>
-                        </div>
-                      )}
-                    </div>
-                  )} */}
-
+                 
                   {user.role === "student" && (
                     <div className="space-y-2">
                       <Label htmlFor="studentId">Student ID</Label>
-                      
-                      {/* เราลบเงื่อนไข isEditing ออก ให้แสดงผลแบบ Read-only ตลอด */}
                       <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span>{user.studentId || "Not specified"}</span>
                       </div>
-
                     </div>
                   )}
 
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="joinDate">Join Date</Label>
                     <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span>{user.joinDate}</span>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               </CardContent>
             </Card>
@@ -382,7 +375,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl">
                   <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                    {user.role === "student" ? "3" : user.role === "advisor" ? "12" : "156"}
+                    {user.stats?.stat1 || 0}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {user.role === "student" ? "Submissions" : user.role === "advisor" ? "Students" : "Total Users"}
@@ -390,7 +383,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl">
                   <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">
-                    {user.role === "student" ? "2" : user.role === "advisor" ? "8" : "89"}
+                    {user.stats?.stat2 || 0}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {user.role === "student" ? "Approved" : user.role === "advisor" ? "Completed" : "Total Theses"}
@@ -398,7 +391,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl">
                   <div className="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-                    {user.role === "student" ? "5" : user.role === "advisor" ? "3" : "12"}
+                    {user.stats?.stat3 || 0}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {user.role === "student" ? "Feedback" : "This Month"}
@@ -410,5 +403,8 @@ export default function ProfilePage() {
         </motion.div>
       </motion.div>
     </div>
+
+    //   </motion.div>
+    // </div>
   )
 }
